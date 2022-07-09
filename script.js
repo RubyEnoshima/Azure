@@ -1,14 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * This sample uses the key-phrase extraction endpoint to determine which
- * words or phrases in a document are of particular importance.
- *
- * @summary extracts key phrases from a piece of text
- */
-
-document.getElementById("a").textContent = "aña"
 const { TextAnalyticsClient, AzureKeyCredential } = require("@azure/ai-text-analytics");
 
 // Load the .env file if it exists
@@ -19,34 +8,45 @@ dotenv.config();
 const endpoint = process.env["ENDPOINT"] || "https://cloud04text.cognitiveservices.azure.com/";
 const apiKey = process.env["TEXT_ANALYTICS_API_KEY"] || "d3a79275973244d79733b5d990d0f2ec";
 
-const documents = [
-    "Me gusta la tortilla de atún",
-    "Si yo tuviera una escoba"
-];
 
-async function main() {
-    console.log("== Extract Key Phrases Sample ==");
+var client = new TextAnalyticsClient(endpoint, new AzureKeyCredential(apiKey));
+client.defaultLanguage = "es";
 
-    const client = new TextAnalyticsClient(endpoint, new AzureKeyCredential(apiKey));
 
-    const results = await client.extractKeyPhrases(documents);
+async function extraerTexto(texto) {
 
-    // for (const result of results) {
-    //     console.log(`- Document ${result.id}`);
-    //     if (!result.error) {
-    //         console.log("\tKey phrases:");
-    //         for (const phrase of result.keyPhrases) {
-    //             console.log(`\t- ${phrase}`);
-    //         }
-    //     } else {
-    //         console.error("  Error:", result.error);
-    //     }
-    // }
+    const textDocumentInputLang = [
+        texto
+    ];
 
-    console.log(results[0].keyPhrases[0])
-    document.getElementById("a").textContent = results[0].keyPhrases[0];
+    const resultLang = await client.detectLanguage(textDocumentInputLang);
+
+    const textDocumentInput = [
+        { id: "1", language: resultLang[0].primaryLanguage.iso6391name, text: texto }
+    ];
+
+    const results = await client.extractKeyPhrases(textDocumentInput);
+
+    document.getElementById("res").textContent = resultLang[0].primaryLanguage.name + ' ' + results[0].keyPhrases;
 }
 
-main().catch((err) => {
-    console.error("The sample encountered an error:", err);
-});
+document.getElementById("boton").onclick = function() {
+
+    extraerTexto(document.getElementById("texto").value).catch((err) => {
+        console.error("The sample encountered an error:", err);
+    });
+};
+
+document.getElementById("archivoboton").onclick = function() {
+    let fr = new FileReader;
+
+    fr.readAsText(document.getElementById("archivo").files[0]);
+
+    fr.onload = function() {
+        console.log(fr.result)
+        extraerTexto(fr.result).catch((err) => {
+            console.error("The sample encountered an error:", err);
+        });
+    }
+
+};
